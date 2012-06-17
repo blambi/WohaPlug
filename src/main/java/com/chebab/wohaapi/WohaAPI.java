@@ -55,7 +55,6 @@ public class WohaAPI {
             status = WohaAPIResponse.Status.NOT_WHITELISTED;
         }
         else if( resp.startsWith( "BANNED" ) ) {
-            // FIXME: Add flag support here? maybe a single in the top?
             status = WohaAPIResponse.Status.BANNED;
             message = resp.substring( resp.indexOf( ':' ) +1);
         }

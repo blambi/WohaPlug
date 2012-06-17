@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.TreeMap;
 
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.Server;
 import org.bukkit.configuration.file.FileConfiguration;
 
@@ -23,9 +24,11 @@ import com.chebab.wohaapi.*;
 
 public class WohaPlug extends JavaPlugin implements Listener
 {
-    private TreeMap<String, CachePixie> naughty_cache; // Caching of bad replies so we don't need to care about them
+    private TreeMap<String, CachePixie> naughty_cache; // Caching of bad replies so we don't
+                                                       // need to care about them.
     private String url;
     private WohaAPI api;
+    private int pingworker_id = -1;
 
     public void onLoad() {
         this.getConfig().options().copyDefaults( true );
@@ -41,7 +44,41 @@ public class WohaPlug extends JavaPlugin implements Listener
         getServer().getPluginManager().registerEvents( this, this );
 
         System.out.println( "[WohaPlug] loaded, will connect to " + url );
-        // FIXME: add a peroidic job that pushes update every X sec
+
+        pingworker_id = getServer().getScheduler().scheduleAsyncRepeatingTask(
+            this, new Runnable() {
+                    public void run() {
+                        // Sends pings to the service at a predefined interval and only if we have any one online.
+                        Player[] online = getServer().getOnlinePlayers();
+
+                        if( online.length == 0 ) // Nothing to do.
+                            return;
+
+                        // Build list
+                        String[] names = new String[online.length];
+                        for( int x = 0; x < online.length; x++ ) {
+                            names[x] = online[x].getName();
+                        }
+
+                        api.ping( names );
+                    }
+                },
+            // We wait about 1m before sending and between pings since
+            // the server timeout is ~2m this should be fine even if
+            // we are having a hard load.
+            // 24000ticks / 20 = 1m
+            (long)1200, (long)1200 );
+    }
+
+    public void onDisable() {
+        if( pingworker_id != -1 ) {
+            getServer().getScheduler().cancelTask( pingworker_id );
+        }
+
+        // Send logout for all players? nah this will problable be
+        // used by reload etc so not a werry smart idea. Also if we
+        // just let the service call timeout on them its working like
+        // wohasock did. Might cause a few ghosts.
     }
 
     /**
