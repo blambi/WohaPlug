@@ -49,17 +49,24 @@ public class WohaPlug extends JavaPlugin implements Listener
 
         if( naughty_cache.containsKey( who ) ) {
             CachePixie subject = naughty_cache.get( who );
-            // Clean up stale stuff and if we are still here remove us,
-            System.out.println( "[WohaPlug] " + who + " was not welcome..." );
-            event.disallow( PlayerPreLoginEvent.Result.KICK_WHITELIST, subject.getMessage() );
+
+            if( subject.isTimedout() ) {
+                // Clean up stale stuff and if we are still here remove us,
+                System.out.println( "[WohaPlug] checking with service..." );
+            }
+            else {
+                event.disallow( PlayerPreLoginEvent.Result.KICK_WHITELIST, subject.getMessage() );
+            }
+        }
+        else {
+            // We have to check with remote then..
+            System.out.println( "[WohaPlug] checking with service..." );
+            event.disallow( PlayerPreLoginEvent.Result.KICK_WHITELIST, "you stink");
         }
 
-        // We have to check with remote then..
-
-        
-        System.out.println( "[WohaPlug] " + who + " tried to login." );
-
-        event.disallow( PlayerPreLoginEvent.Result.KICK_WHITELIST, "you stink");
+        // Cache bad ones
+        if( event.getResult() == PlayerPreLoginEvent.Result.KICK_WHITELIST && !naughty_cache.containsKey( who ) )
+            naughty_cache.put( who, new CachePixie( event.getKickMessage() ) );            
     }
 
     /**
