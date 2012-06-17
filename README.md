@@ -1,6 +1,5 @@
 WohaPlug
 ========
-
 Wohaplug is an authentication plugin for bukkit, which utilizes the
 simple api used on our server
 [Gruvdrift](https://github.com/blambi/Gruvdrift).
@@ -10,8 +9,20 @@ related to that approach.
 
 Config
 ------
-
 Currently there is only:
 
- - host: a hostname (web-server hosting the service)
- - port: an int specifying web servers port
+ - url: url to the web service.
+
+Later on we will add secret key for authenticating post requests.
+
+Permissions
+-----------
+None yet.
+
+Missing features compared to wohasock
+-------------------------------------
+
+ - No MOTD
+ - No Fortunes
+ - Doesn't implement jailed as of yet.
+ - Doesn't implement warnings as of yet.

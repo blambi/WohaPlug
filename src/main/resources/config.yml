@@ -1,2 +1,2 @@
-host: "macode.se"
-port: 80
+url: "http://macode.se/wohaapi"
+secret: "not used yet"

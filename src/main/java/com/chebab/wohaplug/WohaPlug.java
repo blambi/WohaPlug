@@ -19,11 +19,14 @@ import org.bukkit.event.player.PlayerQuitEvent;
 
 import org.bukkit.entity.Player;
 
+import com.chebab.wohaapi.*;
+
 public class WohaPlug extends JavaPlugin implements Listener
 {
     private TreeMap<String, CachePixie> naughty_cache; // Caching of bad replies so we don't need to care about them
     private String host;
     private int port;
+    private WohaAPI api;
     
     public void onLoad() {
         this.getConfig().options().copyDefaults( true );
@@ -31,12 +34,14 @@ public class WohaPlug extends JavaPlugin implements Listener
     }
 
     public void onEnable() {
-        host = this.getConfig().getString( "host" );
-        port = this.getConfig().getInt( "port" );
         naughty_cache = new TreeMap<String, CachePixie>();
+
+        url = this.getConfig().getString( "url" );
+        api = new WohaAPI( url );
+        
         getServer().getPluginManager().registerEvents( this, this );
 
-        System.out.println( "[WohaPlug] loaded, will connect to " + host + ":" + port );
+        System.out.println( "[WohaPlug] loaded, will connect to " + url );
         // FIXME: add a peroidic job that pushes update every X sec
     }
 
