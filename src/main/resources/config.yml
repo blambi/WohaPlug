@@ -1,3 +1,2 @@
 host: "macode.se"
-post: 80
-
+port: 80
