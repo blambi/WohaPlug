@@ -1,0 +1,8 @@
+# Backups
+*~
+
+# pyc
+*.pyc
+
+# local configs
+gruvdrift/settings-local.conf
