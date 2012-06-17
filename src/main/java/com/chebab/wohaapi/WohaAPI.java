@@ -69,4 +69,15 @@ public class WohaAPI {
         return new WohaAPIResponse( status, message );
     }
 
+    /**
+     * We take the freedom to ignore all diffrent responses since they
+     * are of no real value.
+     * @return true OK was recived
+     * @return false something else was recived might be treated as true...
+     */
+     public boolean logout( String username ) {
+         String resp = this.call( "logout/" + username + "/" );
+         return resp.equals( "OK" );
+     }
+
 }

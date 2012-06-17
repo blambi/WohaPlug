@@ -53,7 +53,6 @@ public class WohaPlug extends JavaPlugin implements Listener
         WohaAPIResponse resp;
         boolean fetch = true;
 
-        // FIXME: refactor so we don't do auth in two places!
         if( naughty_cache.containsKey( who ) ) {
             CachePixie subject = naughty_cache.get( who );
 
@@ -99,6 +98,6 @@ public class WohaPlug extends JavaPlugin implements Listener
         String who = event.getPlayer().getName();
 
         System.out.println( "[WohaPlug] " + who + " left." );
-        // send update to service.
+        api.logout( who ); // send update to service.
     }
 }
