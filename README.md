@@ -24,5 +24,6 @@ Missing features compared to wohasock
 
  - No MOTD
  - No Fortunes
+ - No listing of online users.
  - Doesn't implement jailed as of yet.
  - Doesn't implement warnings as of yet.
