@@ -4,15 +4,17 @@ package com.chebab.wohaapi;
  * Contains a simple way to access responses from wohaapi
  */
 public class WohaAPIResponse {
-    String status; // Move to enum later on...
+    Status status; // Move to enum later on...
     String message;
-    
-    public WohaAPIResponse( String status, String message ) {
+    boolean flag_jailed = false;
+    String flag_warning = "";
+
+    public WohaAPIResponse( Status status, String message ) {
         this.status = status;
         this.message = message; // Parse out flags
     }
 
-    public String getStatus() {
+    public Status getStatus() {
         return status;
     }
 
@@ -21,10 +23,17 @@ public class WohaAPIResponse {
     }
 
     public boolean getFlagJailed() {
-        return false;
+        return flag_jailed;
     }
 
     public String getFlagWarning() {
-        return "";
+        return flag_warning;
+    }
+
+    public static enum Status {
+        NOT_WHITELISTED,
+        BANNED,
+        ERROR,
+        OK
     }
 }

@@ -24,10 +24,9 @@ import com.chebab.wohaapi.*;
 public class WohaPlug extends JavaPlugin implements Listener
 {
     private TreeMap<String, CachePixie> naughty_cache; // Caching of bad replies so we don't need to care about them
-    private String host;
-    private int port;
+    private String url;
     private WohaAPI api;
-    
+
     public void onLoad() {
         this.getConfig().options().copyDefaults( true );
         this.saveConfig();
@@ -38,7 +37,7 @@ public class WohaPlug extends JavaPlugin implements Listener
 
         url = this.getConfig().getString( "url" );
         api = new WohaAPI( url );
-        
+
         getServer().getPluginManager().registerEvents( this, this );
 
         System.out.println( "[WohaPlug] loaded, will connect to " + url );
@@ -51,13 +50,23 @@ public class WohaPlug extends JavaPlugin implements Listener
     @EventHandler
     public void onPlayerPreLoginEvent( PlayerPreLoginEvent event ) {
         String who = event.getName();
+        WohaAPIResponse resp;
 
+        // FIXME: refactor so we don't do auth in two places!
         if( naughty_cache.containsKey( who ) ) {
             CachePixie subject = naughty_cache.get( who );
 
             if( subject.isTimedout() ) {
                 // Clean up stale stuff and if we are still here remove us,
+                naughty_cache.remove( who );
                 System.out.println( "[WohaPlug] checking with service..." );
+                resp = api.auth( who );
+
+                if( resp.getStatus() == WohaAPIResponse.Status.BANNED ) {
+                    event.disallow( PlayerPreLoginEvent.Result.KICK_BANNED, resp.getMessage() );
+                }
+
+                // FIXME: add handling of other responses.
             }
             else {
                 event.disallow( PlayerPreLoginEvent.Result.KICK_WHITELIST, subject.getMessage() );
@@ -66,12 +75,16 @@ public class WohaPlug extends JavaPlugin implements Listener
         else {
             // We have to check with remote then..
             System.out.println( "[WohaPlug] checking with service..." );
-            event.disallow( PlayerPreLoginEvent.Result.KICK_WHITELIST, "you stink");
+            resp = api.auth( who );
+
+            if( resp.getStatus() == WohaAPIResponse.Status.BANNED ) {
+                event.disallow( PlayerPreLoginEvent.Result.KICK_BANNED, resp.getMessage() );
+            }
         }
 
         // Cache bad ones
-        if( event.getResult() == PlayerPreLoginEvent.Result.KICK_WHITELIST && !naughty_cache.containsKey( who ) )
-            naughty_cache.put( who, new CachePixie( event.getKickMessage() ) );            
+        if( event.getResult() != PlayerPreLoginEvent.Result.ALLOWED && !naughty_cache.containsKey( who ) )
+            naughty_cache.put( who, new CachePixie( event.getKickMessage() ) );
     }
 
     /**
