@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * This class implements the quite simple protocol WohaAPI
@@ -80,4 +81,19 @@ public class WohaAPI {
          return resp.equals( "OK" );
      }
 
+    /**
+     * Updates the service regarding who is still connected.
+     *
+     * @argument users array of users still connected
+     * @return true if all users was online.
+     */
+    public boolean ping( String[] usernames ) {
+        String args = StringUtils.join( usernames, '|' );
+        String resp = this.call( "ping/" + args );
+
+        if( resp.equals( "PONG" ) )
+            return true;
+
+        return false;
+    }
 }
