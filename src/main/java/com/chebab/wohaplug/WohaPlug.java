@@ -51,6 +51,7 @@ public class WohaPlug extends JavaPlugin implements Listener
     public void onPlayerPreLoginEvent( PlayerPreLoginEvent event ) {
         String who = event.getName();
         WohaAPIResponse resp;
+        boolean fetch = true;
 
         // FIXME: refactor so we don't do auth in two places!
         if( naughty_cache.containsKey( who ) ) {
@@ -59,20 +60,15 @@ public class WohaPlug extends JavaPlugin implements Listener
             if( subject.isTimedout() ) {
                 // Clean up stale stuff and if we are still here remove us,
                 naughty_cache.remove( who );
-                System.out.println( "[WohaPlug] checking with service..." );
-                resp = api.auth( who );
-
-                if( resp.getStatus() == WohaAPIResponse.Status.BANNED ) {
-                    event.disallow( PlayerPreLoginEvent.Result.KICK_BANNED, resp.getMessage() );
-                }
-
-                // FIXME: add handling of other responses.
             }
             else {
+                fetch = false; // Don't check
                 event.disallow( PlayerPreLoginEvent.Result.KICK_WHITELIST, subject.getMessage() );
             }
         }
-        else {
+
+
+        if( fetch ) {
             // We have to check with remote then..
             System.out.println( "[WohaPlug] checking with service..." );
             resp = api.auth( who );
@@ -80,12 +76,20 @@ public class WohaPlug extends JavaPlugin implements Listener
             if( resp.getStatus() == WohaAPIResponse.Status.BANNED ) {
                 event.disallow( PlayerPreLoginEvent.Result.KICK_BANNED, resp.getMessage() );
             }
+            else if( resp.getStatus() == WohaAPIResponse.Status.NOT_WHITELISTED ) {
+                event.disallow( PlayerPreLoginEvent.Result.KICK_WHITELIST, "Sorry, not in our whitelist :(" );
+            }
+            else if( resp.getStatus() == WohaAPIResponse.Status.ERROR ) {
+                event.disallow( PlayerPreLoginEvent.Result.KICK_OTHER, "The server is behaving oddly: " + resp.getMessage() );
+            }
         }
 
         // Cache bad ones
         if( event.getResult() != PlayerPreLoginEvent.Result.ALLOWED && !naughty_cache.containsKey( who ) )
             naughty_cache.put( who, new CachePixie( event.getKickMessage() ) );
     }
+
+    // FIXME: add player join so we can handle warnings and jail in a nice manner. or maybe login
 
     /**
      * Handles when a player leaves both voluntary and a bit more assisted.
