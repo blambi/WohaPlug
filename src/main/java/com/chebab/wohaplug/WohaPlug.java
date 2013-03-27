@@ -15,7 +15,8 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.plugin.PluginManager;
 
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerPreLoginEvent;
+//import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
+import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import org.bukkit.entity.Player;
@@ -82,10 +83,58 @@ public class WohaPlug extends JavaPlugin implements Listener
     }
 
     /**
-     * Handles the initial check up if a player is allowed to enter or not
+     * Alternative handler of initial check up since,
+     * on(Async)PlayerPreLogin doesn't seem to work with the dev
+     * builds.
      */
     @EventHandler
-    public void onPlayerPreLoginEvent( PlayerPreLoginEvent event ) {
+    public void onPlayerLogin( PlayerLoginEvent event ) {
+        String who = event.getPlayer().getName();
+        WohaAPIResponse resp;
+        boolean fetch = true;
+
+        if( naughty_cache.containsKey( who ) ) {
+            CachePixie subject = naughty_cache.get( who );
+
+            if( subject.isTimedout() ) {
+                // Clean up stale stuff and if we are still here remove us,
+                naughty_cache.remove( who );
+            }
+            else {
+                fetch = false; // Don't check
+                event.disallow( PlayerLoginEvent.Result.KICK_WHITELIST, subject.getMessage() );
+            }
+        }
+
+
+        if( fetch ) {
+            // We have to check with remote then..
+            System.out.println( "[WohaPlug] checking with service..." );
+            resp = api.auth( who );
+
+            if( resp.getStatus() == WohaAPIResponse.Status.BANNED ) {
+                event.disallow( PlayerLoginEvent.Result.KICK_BANNED, resp.getMessage() );
+            }
+            else if( resp.getStatus() == WohaAPIResponse.Status.NOT_WHITELISTED ) {
+                event.disallow( PlayerLoginEvent.Result.KICK_WHITELIST, "Sorry, not in our whitelist :(" );
+            }
+            else if( resp.getStatus() == WohaAPIResponse.Status.ERROR ) {
+                event.disallow( PlayerLoginEvent.Result.KICK_OTHER, "The server is behaving oddly: " + resp.getMessage() );
+            }
+        }
+
+        // Cache bad ones
+        if( event.getResult() != PlayerLoginEvent.Result.ALLOWED && !naughty_cache.containsKey( who ) )
+            naughty_cache.put( who, new CachePixie( event.getKickMessage() ) );
+    }
+
+
+    /**
+     * Handles the initial check up if a player is allowed to enter or not
+     * @FIXME: Later on check if this is doable later on..
+     */
+    /*@EventHandler
+    public void onAsyncPlayerPreLogin( AsyncPlayerPreLoginEvent event ) {
         String who = event.getName();
         WohaAPIResponse resp;
         boolean fetch = true;
@@ -99,7 +148,7 @@ public class WohaPlug extends JavaPlugin implements Listener
             }
             else {
                 fetch = false; // Don't check
-                event.disallow( PlayerPreLoginEvent.Result.KICK_WHITELIST, subject.getMessage() );
+                event.disallow( AsyncPlayerPreLoginEvent.Result.KICK_WHITELIST, subject.getMessage() );
             }
         }
 
@@ -110,20 +159,21 @@ public class WohaPlug extends JavaPlugin implements Listener
             resp = api.auth( who );
 
             if( resp.getStatus() == WohaAPIResponse.Status.BANNED ) {
-                event.disallow( PlayerPreLoginEvent.Result.KICK_BANNED, resp.getMessage() );
+                event.disallow( AsyncPlayerPreLoginEvent.Result.KICK_BANNED, resp.getMessage() );
             }
             else if( resp.getStatus() == WohaAPIResponse.Status.NOT_WHITELISTED ) {
-                event.disallow( PlayerPreLoginEvent.Result.KICK_WHITELIST, "Sorry, not in our whitelist :(" );
+                event.disallow( AsyncPlayerPreLoginEvent.Result.KICK_WHITELIST, "Sorry, not in our whitelist :(" );
             }
             else if( resp.getStatus() == WohaAPIResponse.Status.ERROR ) {
-                event.disallow( PlayerPreLoginEvent.Result.KICK_OTHER, "The server is behaving oddly: " + resp.getMessage() );
+                event.disallow( AsyncPlayerPreLoginEvent.Result.KICK_OTHER, "The server is behaving oddly: " + resp.getMessage() );
             }
         }
 
         // Cache bad ones
-        if( event.getResult() != PlayerPreLoginEvent.Result.ALLOWED && !naughty_cache.containsKey( who ) )
+        if( event.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED && !naughty_cache.containsKey( who ) )
             naughty_cache.put( who, new CachePixie( event.getKickMessage() ) );
     }
+    */
 
     // FIXME: add player join so we can handle warnings and jail in a nice manner. or maybe login
 
